@@ -297,7 +297,7 @@ class ChecksumFileMenuProvider(GObject.GObject, FileManager.MenuProvider):
         pass
 
     def the_first_is_file(self, items):
-        file_in = unquote_plus(item[0].get_uri()[7:])
+        file_in = unquote_plus(items[0].get_uri()[7:])
         if not os.path.isfile(file_in):
             return False
         return True

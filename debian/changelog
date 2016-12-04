@@ -1,5 +1,5 @@
-nautilus-checksum (0.1.0-0extras16.04.0) xenial; urgency=low
+nautilus-checksum (0.1.0-0extras16.04.1) xenial; urgency=low
 
   * First release
 
- -- Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>  Wed, 23 Nov 2016 01:43:00 +0100
+ -- Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>  Sun, 04 Dec 2016 11:16:03 +0100
