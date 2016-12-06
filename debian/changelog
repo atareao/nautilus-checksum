@@ -1,8 +1,8 @@
-nautilus-checksum (0.3.1-0extras16.04.0) xenial; urgency=medium
+nautilus-checksum (0.3.1-0extras16.04.1) xenial; urgency=medium
 
   * Using threads to calculate checksum
 
- -- Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>  Tue, 06 Dec 2016 07:15:11 +0100
+ -- Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>  Tue, 06 Dec 2016 08:38:41 +0100
 
 nautilus-checksum (0.1.0-0extras16.04.5) xenial; urgency=low
 

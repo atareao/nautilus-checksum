@@ -115,7 +115,6 @@ class ChecksumDialog(Gtk.Dialog):
         diib = DoItInBackground(afile)
         progreso = Progreso(_('Calculate checksums'), self, 5)
         progreso.connect('i-want-stop', self.close)
-        diib.connect('ended', self.update_checksum)
         diib.connect('started', progreso.set_max_value)
         diib.connect('end_one', progreso.increase)
         diib.connect('start_one', progreso.set_element)
@@ -150,14 +149,6 @@ class ChecksumDialog(Gtk.Dialog):
 
     def update_value_51(self, anobject, value):
         self.entry51.set_text(value)
-
-    def update_checksum(self, anobject, data):
-        self.entry01.set_text(data['file'])
-        self.entry11.set_text(data['md5'])
-        self.entry21.set_text(data['sha1'])
-        self.entry31.set_text(data['sha256'])
-        self.entry41.set_text(data['sha512'])
-        self.entry51.set_text(data['crc'])
 
     def on_key_press(self, widget, anevent):
         if anevent.keyval == 65421 or anevent.keyval == 65293:
@@ -202,7 +193,7 @@ class IdleObject(GObject.GObject):
 class DoItInBackground(IdleObject, Thread):
     __gsignals__ = {
         'started': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
-        'ended': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (object,)),
+        'ended': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
         'start_one': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
         'end_one': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
         'file': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
@@ -221,43 +212,37 @@ class DoItInBackground(IdleObject, Thread):
 
     def run(self):
         self.emit('started', 5)
-        ans = self.calculate(self.afile)
-        print(ans)
-        self.emit('ended', ans)
+        self.calculate(self.afile)
+        self.emit('ended')
 
     def calculate(self, afile):
-        ans = {}
         if afile is not None:
-            ans['file'] = afile
             self.emit('file', afile)
+
             self.emit('start_one', 'md5')
-            ans['md5'] = get_hashsum('md5', afile)
-            self.emit('md5', ans['md5'])
+            hassum = get_hashsum('md5', afile)
+            self.emit('md5', hassum)
             self.emit('end_one', 1)
+
             self.emit('start_one', 'sha1')
-            ans['sha1'] = get_hashsum('sha1', afile)
-            self.emit('sha1', ans['sha1'])
+            hassum = get_hashsum('sha1', afile)
+            self.emit('sha1', hassum)
             self.emit('end_one', 1)
+
             self.emit('start_one', 'sha256')
-            ans['sha256'] = get_hashsum('sha256', afile)
-            self.emit('sha256', ans['sha256'])
+            hassum = get_hashsum('sha256', afile)
+            self.emit('sha256', hassum)
             self.emit('end_one', 1)
+
             self.emit('start_one', 'sha512')
-            ans['sha512'] = get_hashsum('sha512', afile)
-            self.emit('sha512', ans['sha512'])
+            hassum = get_hashsum('sha512', afile)
+            self.emit('sha512', hassum)
             self.emit('end_one', 1)
+
             self.emit('start_one', 'crc')
-            ans['crc'] = get_hashsum('crc', afile)
-            self.emit('crc', ans['crc'])
+            hassum = get_hashsum('crc', afile)
+            self.emit('crc', hassum)
             self.emit('end_one', 1)
-        else:
-            ans['file'] = ''
-            ans['md5'] = ''
-            ans['sha1'] = ''
-            ans['sha256'] = ''
-            ans['sha512'] = ''
-            ans['crc'] = ''
-        return ans
 
 
 def get_files(files_in):
@@ -373,6 +358,7 @@ class ChecksumFileMenuProvider(GObject.GObject, FileManager.MenuProvider):
         if len(files) > 0:
             hsd = ChecksumDialog(files[0])
             hsd.run()
+            hsd.destroy()
 
     def get_file_items(self, window, sel_items):
         """
