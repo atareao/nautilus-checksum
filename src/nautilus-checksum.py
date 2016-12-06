@@ -24,6 +24,7 @@
 import gi
 try:
     gi.require_version('Gtk', '3.0')
+    gi.require_version('Gdk', '3.0')
     gi.require_version('Nautilus', '3.0')
 except Exception as e:
     print(e)
@@ -35,6 +36,7 @@ from threading import Thread
 from urllib import unquote_plus
 from gi.repository import GObject
 from gi.repository import Gtk
+from gi.repository import Gdk
 from gi.repository import GLib
 from gi.repository import Nautilus as FileManager
 
@@ -46,12 +48,13 @@ _ = str
 
 class ChecksumDialog(Gtk.Dialog):
 
-    def __init__(self, afile=None):
+    def __init__(self, afile):
         Gtk.Dialog.__init__(self, _('Checksum'), None,
                             Gtk.DialogFlags.MODAL |
                             Gtk.DialogFlags.DESTROY_WITH_PARENT,
                             (Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT))
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+
         frame = Gtk.Frame()
         frame.set_border_width(5)
         grid = Gtk.Grid()
@@ -79,40 +82,82 @@ class ChecksumDialog(Gtk.Dialog):
         label50 = Gtk.Label(_('CRC')+' :')
         label50.set_xalign(0)
         grid.attach(label50, 0, 5, 1, 1)
-        entry01 = Gtk.Entry()
-        entry01.set_width_chars(70)
-        entry01.set_property("editable", False)
-        entry01.connect('key-press-event', self.on_key_press)
-        grid.attach(entry01, 1, 0, 1, 1)
-        entry11 = Gtk.Entry()
-        entry11.set_property("editable", False)
-        entry11.connect('key-press-event', self.on_key_press)
-        grid.attach(entry11, 1, 1, 1, 1)
-        entry21 = Gtk.Entry()
-        entry21.set_property("editable", False)
-        entry21.connect('key-press-event', self.on_key_press)
-        grid.attach(entry21, 1, 2, 1, 1)
-        entry31 = Gtk.Entry()
-        entry31.set_property("editable", False)
-        entry31.connect('key-press-event', self.on_key_press)
-        grid.attach(entry31, 1, 3, 1, 1)
-        entry41 = Gtk.Entry()
-        entry41.set_property("editable", False)
-        entry41.connect('key-press-event', self.on_key_press)
-        grid.attach(entry41, 1, 4, 1, 1)
-        entry51 = Gtk.Entry()
-        entry51.set_property("editable", False)
-        entry51.connect('key-press-event', self.on_key_press)
-        grid.attach(entry51, 1, 5, 1, 1)
-        if afile is not None:
-            entry01.set_text(afile)
-            entry11.set_text(get_hashsum('md5', afile))
-            entry21.set_text(get_hashsum('sha1', afile))
-            entry31.set_text(get_hashsum('sha256', afile))
-            entry41.set_text(get_hashsum('sha512', afile))
-            entry51.set_text(get_hashsum('crc', afile))
-
+        self.entry01 = Gtk.Entry()
+        self.entry01.set_width_chars(70)
+        self.entry01.set_property("editable", False)
+        self.entry01.connect('key-press-event', self.on_key_press)
+        grid.attach(self.entry01, 1, 0, 1, 1)
+        self.entry11 = Gtk.Entry()
+        self.entry11.set_property("editable", False)
+        self.entry11.connect('key-press-event', self.on_key_press)
+        grid.attach(self.entry11, 1, 1, 1, 1)
+        self.entry21 = Gtk.Entry()
+        self.entry21.set_property("editable", False)
+        self.entry21.connect('key-press-event', self.on_key_press)
+        grid.attach(self.entry21, 1, 2, 1, 1)
+        self.entry31 = Gtk.Entry()
+        self.entry31.set_property("editable", False)
+        self.entry31.connect('key-press-event', self.on_key_press)
+        grid.attach(self.entry31, 1, 3, 1, 1)
+        self.entry41 = Gtk.Entry()
+        self.entry41.set_property("editable", False)
+        self.entry41.connect('key-press-event', self.on_key_press)
+        grid.attach(self.entry41, 1, 4, 1, 1)
+        self.entry51 = Gtk.Entry()
+        self.entry51.set_property("editable", False)
+        self.entry51.connect('key-press-event', self.on_key_press)
+        grid.attach(self.entry51, 1, 5, 1, 1)
         self.show_all()
+
+        self.calculate_checksum(afile)
+
+    def calculate_checksum(self, afile):
+        diib = DoItInBackground(afile)
+        progreso = Progreso(_('Calculate checksums'), self, 5)
+        progreso.connect('i-want-stop', self.close)
+        diib.connect('ended', self.update_checksum)
+        diib.connect('started', progreso.set_max_value)
+        diib.connect('end_one', progreso.increase)
+        diib.connect('start_one', progreso.set_element)
+        diib.connect('ended', progreso.close)
+        diib.connect('file', self.update_value_01)
+        diib.connect('md5', self.update_value_11)
+        diib.connect('sha1', self.update_value_21)
+        diib.connect('sha256', self.update_value_31)
+        diib.connect('sha512', self.update_value_41)
+        diib.connect('crc', self.update_value_51)
+        diib.start()
+        progreso.run()
+
+    def close(self, *args):
+        self.destroy()
+        exit()
+
+    def update_value_01(self, anobject, value):
+        self.entry01.set_text(value)
+
+    def update_value_11(self, anobject, value):
+        self.entry11.set_text(value)
+
+    def update_value_21(self, anobject, value):
+        self.entry21.set_text(value)
+
+    def update_value_31(self, anobject, value):
+        self.entry31.set_text(value)
+
+    def update_value_41(self, anobject, value):
+        self.entry41.set_text(value)
+
+    def update_value_51(self, anobject, value):
+        self.entry51.set_text(value)
+
+    def update_checksum(self, anobject, data):
+        self.entry01.set_text(data['file'])
+        self.entry11.set_text(data['md5'])
+        self.entry21.set_text(data['sha1'])
+        self.entry31.set_text(data['sha256'])
+        self.entry41.set_text(data['sha512'])
+        self.entry51.set_text(data['crc'])
 
     def on_key_press(self, widget, anevent):
         if anevent.keyval == 65421 or anevent.keyval == 65293:
@@ -156,50 +201,73 @@ class IdleObject(GObject.GObject):
 
 class DoItInBackground(IdleObject, Thread):
     __gsignals__ = {
-        'started': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
-        'ended': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (bool,)),
+        'started': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
+        'ended': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (object,)),
         'start_one': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
-        'end_one': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
+        'end_one': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
+        'file': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'md5': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'sha1': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'sha256': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'sha512': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'crc': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
     }
 
-    def __init__(self, elements):
+    def __init__(self, afile):
         IdleObject.__init__(self)
         Thread.__init__(self)
-        self.elements = elements
-        self.stopit = False
-        self.ok = True
         self.daemon = True
-        self.process = None
-
-    def stop(self, *args):
-        self.stopit = True
-
-    def crush_file(self, file_in):
-        rutine = 'srm -lvr "%s"' % (file_in)
-        args = shlex.split(rutine)
-        self.process = subprocess.Popen(args, stdout=subprocess.PIPE)
-        out, err = self.process.communicate()
+        self.afile = afile
 
     def run(self):
-        self.emit('started')
-        try:
-            for element in self.elements:
-                print(element)
-                if self.stopit is True:
-                    self.ok = False
-                    break
-                self.emit('start_one', element)
-                self.crush_file(element)
-                self.emit('end_one')
-        except Exception as e:
-            self.ok = False
-        try:
-            if self.process is not None:
-                self.process.terminate()
-                self.process = None
-        except Exception as e:
-            print(e)
-        self.emit('ended', self.ok)
+        self.emit('started', 5)
+        ans = self.calculate(self.afile)
+        print(ans)
+        self.emit('ended', ans)
+
+    def calculate(self, afile):
+        ans = {}
+        if afile is not None:
+            ans['file'] = afile
+            self.emit('file', afile)
+            self.emit('start_one', 'md5')
+            ans['md5'] = get_hashsum('md5', afile)
+            self.emit('md5', ans['md5'])
+            self.emit('end_one', 1)
+            self.emit('start_one', 'sha1')
+            ans['sha1'] = get_hashsum('sha1', afile)
+            self.emit('sha1', ans['sha1'])
+            self.emit('end_one', 1)
+            self.emit('start_one', 'sha256')
+            ans['sha256'] = get_hashsum('sha256', afile)
+            self.emit('sha256', ans['sha256'])
+            self.emit('end_one', 1)
+            self.emit('start_one', 'sha512')
+            ans['sha512'] = get_hashsum('sha512', afile)
+            self.emit('sha512', ans['sha512'])
+            self.emit('end_one', 1)
+            self.emit('start_one', 'crc')
+            ans['crc'] = get_hashsum('crc', afile)
+            self.emit('crc', ans['crc'])
+            self.emit('end_one', 1)
+        else:
+            ans['file'] = ''
+            ans['md5'] = ''
+            ans['sha1'] = ''
+            ans['sha256'] = ''
+            ans['sha512'] = ''
+            ans['crc'] = ''
+        return ans
+
+
+def get_files(files_in):
+    files = []
+    for file_in in files_in:
+        print(file_in)
+        file_in = unquote_plus(file_in.get_uri()[7:])
+        if os.path.isfile(file_in):
+            files.append(file_in)
+    return files
 
 
 class Progreso(Gtk.Dialog, IdleObject):
@@ -208,7 +276,10 @@ class Progreso(Gtk.Dialog, IdleObject):
     }
 
     def __init__(self, title, parent, max_value):
-        Gtk.Dialog.__init__(self, title, parent)
+        print(parent)
+        Gtk.Dialog.__init__(self, title, parent,
+                            Gtk.DialogFlags.MODAL |
+                            Gtk.DialogFlags.DESTROY_WITH_PARENT)
         IdleObject.__init__(self)
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.set_size_request(330, 30)
@@ -252,6 +323,9 @@ class Progreso(Gtk.Dialog, IdleObject):
         self.max_value = max_value
         self.value = 0.0
 
+    def set_max_value(self, anobject, max_value):
+        self.max_value = float(max_value)
+
     def get_stop(self):
         return self.stop
 
@@ -263,24 +337,14 @@ class Progreso(Gtk.Dialog, IdleObject):
         self.destroy()
 
     def set_element(self, anobject, element):
-        self.label.set_text(_('Crushing: %s') % element)
+        self.label.set_text(_('Calculating: %s') % element)
 
-    def increase(self, anobject):
-        self.value += 1.0
+    def increase(self, anobject, value):
+        self.value += float(value)
         fraction = self.value/self.max_value
         self.progressbar.set_fraction(fraction)
         if self.value == self.max_value:
             self.hide()
-
-
-def get_files(files_in):
-    files = []
-    for file_in in files_in:
-        print(file_in)
-        file_in = unquote_plus(file_in.get_uri()[7:])
-        if os.path.isfile(file_in):
-            files.append(file_in)
-    return files
 
 
 class ChecksumFileMenuProvider(GObject.GObject, FileManager.MenuProvider):
@@ -297,15 +361,18 @@ class ChecksumFileMenuProvider(GObject.GObject, FileManager.MenuProvider):
         pass
 
     def the_first_is_file(self, items):
-        file_in = unquote_plus(items[0].get_uri()[7:])
-        if not os.path.isfile(file_in):
-            return False
-        return True
+        if len(items) > 0:
+            file_in = unquote_plus(items[0].get_uri()[7:])
+            if not os.path.isfile(file_in):
+                return False
+            return True
+        return False
 
     def hashcheck(self, menu, selected):
         files = get_files(selected)
-        csd = checksum(files[0])
-        csd.run()
+        if len(files) > 0:
+            hsd = ChecksumDialog(files[0])
+            hsd.run()
 
     def get_file_items(self, window, sel_items):
         """
@@ -325,12 +392,13 @@ class ChecksumFileMenuProvider(GObject.GObject, FileManager.MenuProvider):
 
 
 if __name__ == '__main__':
-    print(hashlib.algorithms_available)
-    afile = '/home/lorenzo/speeds.pdf'
+    afile = '/home/lorenzo/Descargas/ubuntu-gnome-16.10-desktop-amd64.iso'
+    '''
     print(get_hashsum('md5', afile))
     print(get_hashsum('crc', afile))
     print(get_hashsum('sha1', afile))
     print(get_hashsum('sha256', afile))
     print(get_hashsum('sha512', afile))
+    '''
     hsd = ChecksumDialog(afile)
     hsd.run()
