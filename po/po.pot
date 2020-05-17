@@ -1,0 +1,64 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-17 07:21+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/nautilus-checksum.py:59 src/nautilus-checksum.py:387
+#: src/nautilus-checksum.py:394
+msgid "Checksum"
+msgstr ""
+
+#: src/nautilus-checksum.py:74
+msgid "File"
+msgstr ""
+
+#: src/nautilus-checksum.py:77
+msgid "MD5 checksum"
+msgstr ""
+
+#: src/nautilus-checksum.py:80
+msgid "SHA1 checksum"
+msgstr ""
+
+#: src/nautilus-checksum.py:83
+msgid "SHA256 checksum"
+msgstr ""
+
+#: src/nautilus-checksum.py:86
+msgid "SHA512 checksum"
+msgstr ""
+
+#: src/nautilus-checksum.py:89
+msgid "CRC"
+msgstr ""
+
+#: src/nautilus-checksum.py:123
+msgid "Calculate checksums"
+msgstr ""
+
+#: src/nautilus-checksum.py:340
+#, python-format
+msgid "Calculating: %s"
+msgstr ""
+
+#: src/nautilus-checksum.py:388 src/nautilus-checksum.py:395
+msgid "Get checksum for file"
+msgstr ""
+
+#: src/nautilus-checksum.py:402 src/nautilus-checksum.py:403
+msgid "About"
+msgstr ""

@@ -1,29 +1,32 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# This file is part of nautilus-convert2ogg
+# This file is part of nautilus-checksum
 #
-# Copyright (C) 2012-2016 Lorenzo Carbonell
-# lorenzo.carbonell.cerezo@gmail.com
+# Copyright (c) 2016 Lorenzo Carbonell Cerezo <a.k.a. atareao>
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-#
-#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import gi
 try:
     gi.require_version('Gtk', '3.0')
+    gi.require_version('GLib', '3.0')
     gi.require_version('Gdk', '3.0')
     gi.require_version('Nautilus', '3.0')
 except Exception as e:
@@ -33,23 +36,27 @@ import os
 import hashlib
 import zlib
 from threading import Thread
-from urllib import unquote_plus
 from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GLib
 from gi.repository import Nautilus as FileManager
 
+APP = 'nautilus-checksum'
+LANGDIR = os.path.join('usr', 'share', 'locale-langpack')
+APPNAME = 'nautilus-checksum'
+ICON = 'nautilus-checksum'
+VERSION = '0.1.0'
 
-SEPARATOR = u'\u2015' * 10
-
-_ = str
-
+current_locale, encoding = locale.getdefaultlocale()
+language = gettext.translation(APP, LANGDIR, [current_locale])
+language.install()
+_ = language.gettext
 
 class ChecksumDialog(Gtk.Dialog):
 
-    def __init__(self, afile):
-        Gtk.Dialog.__init__(self, _('Checksum'), None,
+    def __init__(self, parent, afile):
+        Gtk.Dialog.__init__(self, _('Checksum'), parent,
                             Gtk.DialogFlags.MODAL |
                             Gtk.DialogFlags.DESTROY_WITH_PARENT,
                             (Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT))
@@ -114,7 +121,7 @@ class ChecksumDialog(Gtk.Dialog):
     def calculate_checksum(self, afile):
         diib = DoItInBackground(afile)
         progreso = Progreso(_('Calculate checksums'), self, 5)
-        progreso.connect('i-want-stop', self.close)
+        progreso.connect('i-want-stop', diib.stopit)
         diib.connect('started', progreso.set_max_value)
         diib.connect('end_one', progreso.increase)
         diib.connect('start_one', progreso.set_element)
@@ -130,7 +137,6 @@ class ChecksumDialog(Gtk.Dialog):
 
     def close(self, *args):
         self.destroy()
-        exit()
 
     def update_value_01(self, anobject, value):
         self.entry01.set_text(value)
@@ -209,6 +215,10 @@ class DoItInBackground(IdleObject, Thread):
         Thread.__init__(self)
         self.daemon = True
         self.afile = afile
+        self.iwts = False
+
+    def stopit(self, *arg):
+        self.iwts = True
 
     def run(self):
         self.emit('started', 5)
@@ -218,40 +228,45 @@ class DoItInBackground(IdleObject, Thread):
     def calculate(self, afile):
         if afile is not None:
             self.emit('file', afile)
-
+            if self.iwts is True:
+                return
             self.emit('start_one', 'md5')
             hassum = get_hashsum('md5', afile)
             self.emit('md5', hassum)
             self.emit('end_one', 1)
-
+            if self.iwts is True:
+                return
             self.emit('start_one', 'sha1')
             hassum = get_hashsum('sha1', afile)
             self.emit('sha1', hassum)
             self.emit('end_one', 1)
-
+            if self.iwts is True:
+                return
             self.emit('start_one', 'sha256')
             hassum = get_hashsum('sha256', afile)
             self.emit('sha256', hassum)
             self.emit('end_one', 1)
-
+            if self.iwts is True:
+                return
             self.emit('start_one', 'sha512')
             hassum = get_hashsum('sha512', afile)
             self.emit('sha512', hassum)
             self.emit('end_one', 1)
-
+            if self.iwts is True:
+                return
             self.emit('start_one', 'crc')
             hassum = get_hashsum('crc', afile)
             self.emit('crc', hassum)
             self.emit('end_one', 1)
+            if self.iwts is True:
+                return
 
 
 def get_files(files_in):
     files = []
     for file_in in files_in:
-        print(file_in)
-        file_in = unquote_plus(file_in.get_uri()[7:])
-        if os.path.isfile(file_in):
-            files.append(file_in)
+        if not file_in.is_directory():
+            files.append(file_in.get_location().get_path())
     return files
 
 
@@ -261,7 +276,6 @@ class Progreso(Gtk.Dialog, IdleObject):
     }
 
     def __init__(self, title, parent, max_value):
-        print(parent)
         Gtk.Dialog.__init__(self, title, parent,
                             Gtk.DialogFlags.MODAL |
                             Gtk.DialogFlags.DESTROY_WITH_PARENT)
@@ -319,6 +333,7 @@ class Progreso(Gtk.Dialog, IdleObject):
         self.emit('i-want-stop')
 
     def close(self, *args):
+        self.emit('i-want-stop')
         self.destroy()
 
     def set_element(self, anobject, element):
@@ -353,10 +368,10 @@ class ChecksumFileMenuProvider(GObject.GObject, FileManager.MenuProvider):
             return True
         return False
 
-    def hashcheck(self, menu, selected):
+    def hashcheck(self, menu, window, selected):
         files = get_files(selected)
         if len(files) > 0:
-            hsd = ChecksumDialog(files[0])
+            hsd = ChecksumDialog(window, files[0])
             hsd.run()
             hsd.destroy()
 
@@ -368,13 +383,63 @@ class ChecksumFileMenuProvider(GObject.GObject, FileManager.MenuProvider):
         """
         if self.the_first_is_file(sel_items):
             top_menuitem = FileManager.MenuItem(
-                name='ChecksumFileMenuProvider::Gtk-checksum-files',
+                name='ChecksumFileMenuProvider::Gtk-checksum-top',
+                label=_('Checksum'),
+                tip=_('Get checksum for file'))
+            submenu = FileManager.Menu()
+            top_menuitem.set_submenu(submenu)
+
+            sub_menuitem_00 = FileManager.MenuItem(
+                name='ChecksumFileMenuProvider::Gtk-checksum-sub-00',
                 label=_('Checksum') + '...',
                 tip=_('Get checksum for file'))
-            top_menuitem.connect('activate', self.hashcheck, sel_items)
-            #
+            sub_menuitem_00.connect('activate', self.hashcheck, window,
+                                    sel_items)
+            submenu.append_item(sub_menuitem_00)
+
+            sub_menuitem_01 = FileManager.MenuItem(
+                name='ChecksumFileMenuProvider::Gtk-500px-sub-02',
+                label=_('About'),
+                tip=_('About'))
+            sub_menuitem_01.connect('activate', self.about, window)
+            submenu.append_item(sub_menuitem_01)
+
             return top_menuitem,
         return
+
+    def about(self, widget, window):
+        ad = Gtk.AboutDialog(parent=window)
+        ad.set_name(APPNAME)
+        ad.set_version(VERSION)
+        ad.set_copyright('Copyrignt (c) 2016\nLorenzo Carbonell')
+        ad.set_comments(APPNAME)
+        ad.set_license('''
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+''')
+        ad.set_website('http://www.atareao.es')
+        ad.set_website_label('http://www.atareao.es')
+        ad.set_authors(['Lorenzo Carbonell Cerezo <a.k.a. atareao>'])
+        ad.set_documenters(['Lorenzo Carbonell Cerezo <a.k.a. atareao>'])
+        ad.set_icon_name(ICON)
+        ad.set_logo_icon_name(APPNAME)
+        ad.run()
+        ad.destroy()
 
 
 if __name__ == '__main__':
@@ -386,5 +451,6 @@ if __name__ == '__main__':
     print(get_hashsum('sha256', afile))
     print(get_hashsum('sha512', afile))
     '''
-    hsd = ChecksumDialog(afile)
+    hsd = ChecksumDialog(None, afile)
     hsd.run()
+    hsd.destroy()

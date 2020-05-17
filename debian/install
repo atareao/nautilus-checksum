@@ -1,1 +1,2 @@
-src/nautilus-checksum.py /usr/share/nautilus-python/extensions
+src/*.py /usr/share/nautilus-python/extensions
+data/icons/* /usr/share/icons/hicolor

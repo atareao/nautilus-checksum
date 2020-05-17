@@ -1,0 +1,64 @@
+# Spanish translations for nautilus-checksum package.
+# Copyright (C) 2020 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the nautilus-checksum package.
+# Lorenzo <lorenzo.carbonell.cerezo@gmail.com>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nautilus-checksum - 0.6.0-0extras20.04.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-17 07:17+0200\n"
+"PO-Revision-Date: 2020-05-17 07:17+0200\n"
+"Last-Translator: Lorenzo <lorenzo.carbonell.cerezo@gmail.com>\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/nautilus-checksum.py:59 src/nautilus-checksum.py:387
+#: src/nautilus-checksum.py:394
+msgid "Checksum"
+msgstr "Suma de comprobación"
+
+#: src/nautilus-checksum.py:74
+msgid "File"
+msgstr "Archivo"
+
+#: src/nautilus-checksum.py:77
+msgid "MD5 checksum"
+msgstr "Suma de comprobación MD5"
+
+#: src/nautilus-checksum.py:80
+msgid "SHA1 checksum"
+msgstr "Suma de comprobación SHA1"
+
+#: src/nautilus-checksum.py:83
+msgid "SHA256 checksum"
+msgstr "Suma de comprobación"
+
+#: src/nautilus-checksum.py:86
+msgid "SHA512 checksum"
+msgstr "Suma de comprobación SHA512"
+
+#: src/nautilus-checksum.py:89
+msgid "CRC"
+msgstr "Suma de comprobación CRC"
+
+#: src/nautilus-checksum.py:123
+msgid "Calculate checksums"
+msgstr "Calcula las sumas de comprobación"
+
+#: src/nautilus-checksum.py:340
+#, python-format
+msgid "Calculating: %s"
+msgstr "Calculando: %s"
+
+#: src/nautilus-checksum.py:388 src/nautilus-checksum.py:395
+msgid "Get checksum for file"
+msgstr "Obtén la suma de comprobación para el archivo"
+
+#: src/nautilus-checksum.py:402 src/nautilus-checksum.py:403
+msgid "About"
+msgstr "Acerca de"
