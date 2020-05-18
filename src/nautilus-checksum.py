@@ -29,12 +29,15 @@ try:
     gi.require_version('GLib', '2.0')
     gi.require_version('Gdk', '3.0')
     gi.require_version('Nautilus', '3.0')
+    gi.require_version('GObject', '2.0')
 except Exception as e:
     print(e)
     exit(-1)
 import os
 import hashlib
 import zlib
+import locale
+import gettext
 from threading import Thread
 from gi.repository import GObject
 from gi.repository import Gtk
@@ -358,12 +361,11 @@ class ChecksumFileMenuProvider(GObject.GObject, FileManager.MenuProvider):
         File Manager crashes if a plugin doesn't implement the __init__\
         method
         """
-        pass
+        GObject.Object.__init__(self)
 
     def the_first_is_file(self, items):
         if len(items) > 0:
-            file_in = unquote_plus(items[0].get_uri()[7:])
-            if not os.path.isfile(file_in):
+            if items[0].is_directory():
                 return False
             return True
         return False

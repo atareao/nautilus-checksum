@@ -1,10 +1,10 @@
-nautilus-checksum (0.6.0-0extras20.04.2) focal; urgency=medium
+nautilus-checksum (0.6.0-0extras20.04.5) focal; urgency=medium
 
   * Python3
   * Png icons
   * Minor improvements 
 
- -- Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>  Sun, 17 May 2020 13:43:50 +0200
+ -- Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>  Mon, 18 May 2020 07:51:31 +0200
 
 nautilus-checksum (0.5.0-0extras16.04.2) xenial; urgency=medium
 
