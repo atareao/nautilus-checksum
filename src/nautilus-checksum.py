@@ -50,7 +50,7 @@ APP = 'nautilus-checksum'
 LANGDIR = os.path.join('usr', 'share', 'locale-langpack')
 APPNAME = 'nautilus-checksum'
 ICON = 'nautilus-checksum'
-VERSION = '0.1.0'
+VERSION = '0.7.0'
 BLOCKSIZE = 65536
 
 try:
@@ -60,20 +60,6 @@ try:
     _ = language.gettext
 except:
     _ = str
-
-
-def hash_bytestr_iter(bytesiter, hasher, ashexstr=True):
-    for block in bytesiter:
-        hasher.update(block)
-    return hasher.hexdigest() if ashexstr else hasher.digest()
-
-
-def file_as_blockiter(afile, blocksize=BLOCKSIZE):
-    with afile:
-        block = afile.read(blocksize)
-        while len(block) > 0:
-            yield block
-            block = afile.read(blocksize)
 
 
 class ChecksumDialog(Gtk.Dialog):
@@ -223,25 +209,6 @@ class ChecksumDialog(Gtk.Dialog):
         self.move((monitor_width - width)/2, (monitor_height - height)/2)
 
 
-def get_hashsum(algorithm, afile):
-    if algorithm == 'md5':
-        hashsum = hashlib.md5()
-    elif algorithm == 'sha1':
-        hashsum = hashlib.sha1()
-    elif algorithm == 'sha256':
-        hashsum = hashlib.sha256()
-    elif algorithm == 'sha512':
-        hashsum = hashlib.sha512()
-    elif algorithm == 'crc':
-        prev = 0
-        for eachLine in open(afile, 'rb'):
-            prev = zlib.crc32(eachLine, prev)
-        return "%X" % (prev & 0xFFFFFFFF)
-    else:
-        return ''
-    return hash_bytestr_iter(file_as_blockiter(open(afile, 'rb')), hashsum)
-
-
 class IdleObject(GObject.GObject):
     """
     Override GObject.GObject to always emit signals in the main thread
@@ -277,7 +244,6 @@ class DoItInBackground(IdleObject, Thread):
 
     def stopit(self, *arg):
         self.iwts = True
-        exit(0)
 
     def run(self):
         self.emit('started', 5)
@@ -290,35 +256,71 @@ class DoItInBackground(IdleObject, Thread):
             if self.iwts is True:
                 return
             self.emit('start_one', 'md5')
-            hassum = get_hashsum('md5', afile)
+            hassum = self.get_hashsum('md5', afile)
             self.emit('md5', hassum)
             self.emit('end_one', 1)
             if self.iwts is True:
                 return
             self.emit('start_one', 'sha1')
-            hassum = get_hashsum('sha1', afile)
+            hassum = self.get_hashsum('sha1', afile)
             self.emit('sha1', hassum)
             self.emit('end_one', 1)
             if self.iwts is True:
                 return
             self.emit('start_one', 'sha256')
-            hassum = get_hashsum('sha256', afile)
+            hassum = self.get_hashsum('sha256', afile)
             self.emit('sha256', hassum)
             self.emit('end_one', 1)
             if self.iwts is True:
                 return
             self.emit('start_one', 'sha512')
-            hassum = get_hashsum('sha512', afile)
+            hassum = self.get_hashsum('sha512', afile)
             self.emit('sha512', hassum)
             self.emit('end_one', 1)
             if self.iwts is True:
                 return
             self.emit('start_one', 'crc')
-            hassum = get_hashsum('crc', afile)
+            hassum = self.get_hashsum('crc', afile)
             self.emit('crc', hassum)
             self.emit('end_one', 1)
             if self.iwts is True:
                 return
+
+    def get_hashsum(self, algorithm, afile):
+        if algorithm == 'md5':
+            hashsum = hashlib.md5()
+        elif algorithm == 'sha1':
+            hashsum = hashlib.sha1()
+        elif algorithm == 'sha256':
+            hashsum = hashlib.sha256()
+        elif algorithm == 'sha512':
+            hashsum = hashlib.sha512()
+        elif algorithm == 'crc':
+            prev = 0
+            for eachLine in open(afile, 'rb'):
+                prev = zlib.crc32(eachLine, prev)
+            return "%X" % (prev & 0xFFFFFFFF)
+        else:
+            return ''
+        return self.hash_bytestr_iter(
+                self.file_as_blockiter(open(afile, 'rb')), hashsum)
+
+    def hash_bytestr_iter(self, bytesiter, hasher, ashexstr=True):
+        for block in bytesiter:
+            hasher.update(block)
+            if self.iwts is True:
+                return ''
+        return hasher.hexdigest() if ashexstr else hasher.digest()
+
+
+    def file_as_blockiter(self, afile, blocksize=BLOCKSIZE):
+        with afile:
+            block = afile.read(blocksize)
+            while len(block) > 0:
+                yield block
+                block = afile.read(blocksize)
+                if self.iwts is True:
+                    return
 
 
 def get_files(files_in):
