@@ -1,3 +1,10 @@
+nautilus-checksum (0.7.0-0extras20.04.0) focal; urgency=medium
+
+  * Improved calculation of checksum
+  * add copy to clipboard button
+
+ -- Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>  Sat, 05 Jun 2021 09:16:47 +0200
+
 nautilus-checksum (0.6.0-0extras20.04.5) focal; urgency=medium
 
   * Python3

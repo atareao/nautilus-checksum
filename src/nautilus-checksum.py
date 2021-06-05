@@ -26,6 +26,7 @@
 import gi
 try:
     gi.require_version('Gtk', '3.0')
+    gi.require_version('Gdk', '3.0')
     gi.require_version('GLib', '2.0')
     gi.require_version('Gdk', '3.0')
     gi.require_version('Nautilus', '3.0')
@@ -50,20 +51,39 @@ LANGDIR = os.path.join('usr', 'share', 'locale-langpack')
 APPNAME = 'nautilus-checksum'
 ICON = 'nautilus-checksum'
 VERSION = '0.1.0'
+BLOCKSIZE = 65536
 
-current_locale, encoding = locale.getdefaultlocale()
-language = gettext.translation(APP, LANGDIR, [current_locale])
-language.install()
-_ = language.gettext
+try:
+    current_locale, encoding = locale.getdefaultlocale()
+    language = gettext.translation(APP, LANGDIR, [current_locale])
+    language.install()
+    _ = language.gettext
+except:
+    _ = str
+
+
+def hash_bytestr_iter(bytesiter, hasher, ashexstr=True):
+    for block in bytesiter:
+        hasher.update(block)
+    return hasher.hexdigest() if ashexstr else hasher.digest()
+
+
+def file_as_blockiter(afile, blocksize=BLOCKSIZE):
+    with afile:
+        block = afile.read(blocksize)
+        while len(block) > 0:
+            yield block
+            block = afile.read(blocksize)
+
 
 class ChecksumDialog(Gtk.Dialog):
 
     def __init__(self, parent, afile):
-        Gtk.Dialog.__init__(self, _('Checksum'), parent,
-                            Gtk.DialogFlags.MODAL |
-                            Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                            (Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT))
-        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+        Gtk.Dialog.__init__(self, _('Checksum'), parent)
+        self.set_modal(True)
+        self.set_destroy_with_parent(True)
+        self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
+        self.connect('realize', self.on_realize)
 
         frame = Gtk.Frame()
         frame.set_border_width(5)
@@ -74,52 +94,82 @@ class ChecksumDialog(Gtk.Dialog):
         frame.add(grid)
         self.get_content_area().add(frame)
 
-        label00 = Gtk.Label(_('File')+' :')
+        label00 = Gtk.Label.new(_('File')+' :')
         label00.set_xalign(0)
         grid.attach(label00, 0, 0, 1, 1)
-        label10 = Gtk.Label(_('MD5 checksum')+' :')
+        label10 = Gtk.Label.new(_('MD5 checksum')+' :')
         label10.set_xalign(0)
         grid.attach(label10, 0, 1, 1, 1)
-        label20 = Gtk.Label(_('SHA1 checksum')+' :')
+        label20 = Gtk.Label.new(_('SHA1 checksum')+' :')
         label20.set_xalign(0)
         grid.attach(label20, 0, 2, 1, 1)
-        label30 = Gtk.Label(_('SHA256 checksum')+' :')
+        label30 = Gtk.Label.new(_('SHA256 checksum')+' :')
         label30.set_xalign(0)
         grid.attach(label30, 0, 3, 1, 1)
-        label40 = Gtk.Label(_('SHA512 checksum')+' :')
+        label40 = Gtk.Label.new(_('SHA512 checksum')+' :')
         label40.set_xalign(0)
         grid.attach(label40, 0, 4, 1, 1)
-        label50 = Gtk.Label(_('CRC')+' :')
+        label50 = Gtk.Label.new(_('CRC')+' :')
         label50.set_xalign(0)
         grid.attach(label50, 0, 5, 1, 1)
+
         self.entry01 = Gtk.Entry()
         self.entry01.set_width_chars(70)
         self.entry01.set_property("editable", False)
-        self.entry01.connect('key-press-event', self.on_key_press)
         grid.attach(self.entry01, 1, 0, 1, 1)
+
         self.entry11 = Gtk.Entry()
         self.entry11.set_property("editable", False)
-        self.entry11.connect('key-press-event', self.on_key_press)
         grid.attach(self.entry11, 1, 1, 1, 1)
+
+        button11 = Gtk.Button.new_from_icon_name('edit-copy',
+                                                 Gtk.IconSize.BUTTON)
+        button11.connect('clicked', self.on_clicked, self.entry11)
+        grid.attach(button11, 2, 1, 1, 1)
+
         self.entry21 = Gtk.Entry()
         self.entry21.set_property("editable", False)
-        self.entry21.connect('key-press-event', self.on_key_press)
         grid.attach(self.entry21, 1, 2, 1, 1)
+
+        button21 = Gtk.Button.new_from_icon_name('edit-copy',
+                                                 Gtk.IconSize.BUTTON)
+        button21.connect('clicked', self.on_clicked, self.entry21)
+        grid.attach(button21, 2, 2, 1, 1)
+
         self.entry31 = Gtk.Entry()
         self.entry31.set_property("editable", False)
-        self.entry31.connect('key-press-event', self.on_key_press)
         grid.attach(self.entry31, 1, 3, 1, 1)
+
+        button31 = Gtk.Button.new_from_icon_name('edit-copy',
+                                                 Gtk.IconSize.BUTTON)
+        button31.connect('clicked', self.on_clicked, self.entry31)
+        grid.attach(button31, 2, 3, 1, 1)
+
         self.entry41 = Gtk.Entry()
         self.entry41.set_property("editable", False)
-        self.entry41.connect('key-press-event', self.on_key_press)
         grid.attach(self.entry41, 1, 4, 1, 1)
+
+        button41 = Gtk.Button.new_from_icon_name('edit-copy',
+                                                 Gtk.IconSize.BUTTON)
+        button41.connect('clicked', self.on_clicked, self.entry41)
+        grid.attach(button41, 2, 4, 1, 1)
+
         self.entry51 = Gtk.Entry()
         self.entry51.set_property("editable", False)
-        self.entry51.connect('key-press-event', self.on_key_press)
         grid.attach(self.entry51, 1, 5, 1, 1)
+
+        button51 = Gtk.Button.new_from_icon_name('edit-copy',
+                                                 Gtk.IconSize.BUTTON)
+        button51.connect('clicked', self.on_clicked, self.entry51)
+        grid.attach(button51, 2, 5, 1, 1)
+
         self.show_all()
 
         self.calculate_checksum(afile)
+
+    def on_clicked(self, widget, entry):
+        clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        clipboard.set_text(entry.get_text(), -1)
 
     def calculate_checksum(self, afile):
         diib = DoItInBackground(afile)
@@ -159,9 +209,18 @@ class ChecksumDialog(Gtk.Dialog):
     def update_value_51(self, anobject, value):
         self.entry51.set_text(value)
 
-    def on_key_press(self, widget, anevent):
-        if anevent.keyval == 65421 or anevent.keyval == 65293:
-            self.response(Gtk.ResponseType.ACCEPT)
+    def on_realize(self, *_):
+        display = Gdk.Display.get_default()
+        seat = display.get_default_seat()
+        pointer = seat.get_pointer()
+        screen, x, y = pointer.get_position()
+        monitor = display.get_monitor_at_point(x, y)
+        scale = monitor.get_scale_factor()
+        monitor_width = monitor.get_geometry().width / scale
+        monitor_height = monitor.get_geometry().height / scale
+        width = self.get_preferred_width()[0]
+        height = self.get_preferred_height()[0]
+        self.move((monitor_width - width)/2, (monitor_height - height)/2)
 
 
 def get_hashsum(algorithm, afile):
@@ -180,11 +239,7 @@ def get_hashsum(algorithm, afile):
         return "%X" % (prev & 0xFFFFFFFF)
     else:
         return ''
-    with open(afile, 'rb') as f:
-        for chunk in iter(lambda: f.read(8192), ''):
-            hashsum.update(chunk)
-    f.close()
-    return hashsum.hexdigest()
+    return hash_bytestr_iter(file_as_blockiter(open(afile, 'rb')), hashsum)
 
 
 class IdleObject(GObject.GObject):
@@ -201,16 +256,16 @@ class IdleObject(GObject.GObject):
 
 class DoItInBackground(IdleObject, Thread):
     __gsignals__ = {
-        'started': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
-        'ended': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
-        'start_one': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
-        'end_one': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (int,)),
-        'file': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
-        'md5': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
-        'sha1': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
-        'sha256': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
-        'sha512': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
-        'crc': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'started': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (int,)),
+        'ended': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, ()),
+        'start_one': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'end_one': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (int,)),
+        'file': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'md5': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'sha1': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'sha256': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'sha512': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (str,)),
+        'crc': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, (str,)),
     }
 
     def __init__(self, afile):
@@ -222,6 +277,7 @@ class DoItInBackground(IdleObject, Thread):
 
     def stopit(self, *arg):
         self.iwts = True
+        exit(0)
 
     def run(self):
         self.emit('started', 5)
@@ -275,13 +331,13 @@ def get_files(files_in):
 
 class Progreso(Gtk.Dialog, IdleObject):
     __gsignals__ = {
-        'i-want-stop': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
+        'i-want-stop': (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_NONE, ()),
     }
 
     def __init__(self, title, parent, max_value):
-        Gtk.Dialog.__init__(self, title, parent,
-                            Gtk.DialogFlags.MODAL |
-                            Gtk.DialogFlags.DESTROY_WITH_PARENT)
+        Gtk.Dialog.__init__(self, title, parent)
+        self.set_modal(True)
+        self.set_destroy_with_parent(True)
         IdleObject.__init__(self)
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.set_size_request(330, 30)
@@ -291,35 +347,30 @@ class Progreso(Gtk.Dialog, IdleObject):
         vbox = Gtk.VBox(spacing=5)
         vbox.set_border_width(5)
         self.get_content_area().add(vbox)
-        #
+
         frame1 = Gtk.Frame()
         vbox.pack_start(frame1, True, True, 0)
-        table = Gtk.Table(2, 2, False)
-        frame1.add(table)
-        #
-        self.label = Gtk.Label()
-        table.attach(self.label, 0, 2, 0, 1,
-                     xpadding=5,
-                     ypadding=5,
-                     xoptions=Gtk.AttachOptions.SHRINK,
-                     yoptions=Gtk.AttachOptions.EXPAND)
-        #
+        grid = Gtk.Grid()
+        grid.set_margin_top(20)
+        grid.set_margin_bottom(20)
+        grid.set_margin_start(20)
+        grid.set_margin_end(20)
+        frame1.add(grid)
+
+        self.label = Gtk.Label.new()
+        grid.attach(self.label, 0, 0, 2, 1)
+
         self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_size_request(300, 0)
-        table.attach(self.progressbar, 0, 1, 1, 2,
-                     xpadding=5,
-                     ypadding=5,
-                     xoptions=Gtk.AttachOptions.SHRINK,
-                     yoptions=Gtk.AttachOptions.EXPAND)
+        grid.attach(self.progressbar, 0, 1, 3, 1)
+
         button_stop = Gtk.Button()
         button_stop.set_size_request(40, 40)
         button_stop.set_image(
-            Gtk.Image.new_from_stock(Gtk.STOCK_STOP, Gtk.IconSize.BUTTON))
+            Gtk.Image.new_from_icon_name(Gtk.STOCK_STOP, Gtk.IconSize.BUTTON))
         button_stop.connect('clicked', self.on_button_stop_clicked)
-        table.attach(button_stop, 1, 2, 1, 2,
-                     xpadding=5,
-                     ypadding=5,
-                     xoptions=Gtk.AttachOptions.SHRINK)
+        grid.attach(button_stop, 3, 0, 1, 1)
+
         self.stop = False
         self.show_all()
         self.max_value = max_value
@@ -445,7 +496,7 @@ SOFTWARE.
 
 
 if __name__ == '__main__':
-    afile = '/home/lorenzo/Descargas/ubuntu-gnome-16.10-desktop-amd64.iso'
+    afile = '/home/lorenzo/Descargas/ejemplo.jpg'
     '''
     print(get_hashsum('md5', afile))
     print(get_hashsum('crc', afile))
