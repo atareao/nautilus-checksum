@@ -1,0 +1,65 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-17 07:21+0200\n"
+"PO-Revision-Date: 2022-02-25 18:21+0100\n"
+"Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
+"Language-Team: \n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.0.1\n"
+
+#: src/nautilus-checksum.py:59 src/nautilus-checksum.py:387
+#: src/nautilus-checksum.py:394
+msgid "Checksum"
+msgstr "Controlesom"
+
+#: src/nautilus-checksum.py:74
+msgid "File"
+msgstr "Bestand"
+
+#: src/nautilus-checksum.py:77
+msgid "MD5 checksum"
+msgstr "Md5-ontrolesom"
+
+#: src/nautilus-checksum.py:80
+msgid "SHA1 checksum"
+msgstr "Sha1-controlesom"
+
+#: src/nautilus-checksum.py:83
+msgid "SHA256 checksum"
+msgstr "Sha256-controlesom"
+
+#: src/nautilus-checksum.py:86
+msgid "SHA512 checksum"
+msgstr "Sha512-controlesom"
+
+#: src/nautilus-checksum.py:89
+msgid "CRC"
+msgstr "CRC"
+
+#: src/nautilus-checksum.py:123
+msgid "Calculate checksums"
+msgstr "Controlesommen berekenen"
+
+#: src/nautilus-checksum.py:340
+#, python-format
+msgid "Calculating: %s"
+msgstr "Bezig met berekenen: %s"
+
+#: src/nautilus-checksum.py:388 src/nautilus-checksum.py:395
+msgid "Get checksum for file"
+msgstr "Controlesom van bestand opvragen"
+
+#: src/nautilus-checksum.py:402 src/nautilus-checksum.py:403
+msgid "About"
+msgstr "Over"
